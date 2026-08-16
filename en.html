@@ -306,7 +306,16 @@
         const time = new Date().toLocaleTimeString();
         const div = document.createElement('div');
         div.className = `log-item log-${type}`;
-        div.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-time';
+        timeSpan.textContent = `[${time}] `;
+        
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = msg;
+        
+        div.appendChild(timeSpan);
+        div.appendChild(msgSpan);
         logs.appendChild(div);
         logs.scrollTop = logs.scrollHeight;
     }
