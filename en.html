@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WebADB Console</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card: #151e2e;
+            --card-sub: #1e293b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --accent: #2563eb;
+            --success: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 0.75rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        h1 { font-size: 1.15rem; }
+        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: var(--card-sub);
+            color: var(--text-dim);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+        .connected .status-badge { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .connected .status-dot { background: var(--success); }
+
+        .device-info-card {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: var(--card-sub);
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+        .info-item { display: flex; flex-direction: column; }
+        .info-label { color: var(--text-dim); font-size: 0.65rem; }
+        .info-val { color: #38bdf8; font-weight: 600; font-family: ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .btn-connect {
+            width: 100%;
+            padding: 11px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+        }
+        .btn-connect:active { filter: brightness(0.9); }
+
+        .field-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
+        
+        select {
+            width: 100%;
+            padding: 10px;
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #38bdf8;
+            font-size: 0.85rem;
+            outline: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .cmd-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0.75rem;
+        }
+        .cmd-input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px;
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            font-family: ui-monospace, monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .cmd-input:focus { border-color: #38bdf8; }
+
+        .btn-exec {
+            padding: 0 16px;
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-exec:active { filter: brightness(0.9); }
+
+        .term-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        #logs {
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: ui-monospace, monospace;
+            font-size: 0.72rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-item { margin-bottom: 3px; }
+        .log-time { color: #64748b; margin-right: 5px; }
+        .log-info { color: #94a3b8; }
+        .log-succ { color: #34d399; }
+        .log-warn { color: #fbbf24; }
+        .log-err { color: #f87171; }
+        .log-cmd { color: #38bdf8; font-weight: bold; }
+
+        dialog {
+            margin: auto;
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            max-width: 90%;
+            width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6);
+        }
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(2px);
+        }
+        dialog h3 { font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        dialog p { font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 0.6rem; }
+        dialog ul { font-size: 0.75rem; color: var(--text-dim); margin-left: 1.2rem; margin-bottom: 1rem; line-height: 1.5; }
+        .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .dialog-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-disagree { background: #334155; color: #cbd5e1; }
+        .btn-agree { background: var(--accent); color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <header>
+        <h1>
+            <span>📱 WebADB Console</span>
+            <a href="./zh_cn.html" class="lang-switch">[中文]</a>
+        </h1>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </header>
+
+    <button id="connectBtn" class="btn-connect">🔌 1. Connect Device (WebUSB)</button>
+
+    <div id="deviceInfoCard" class="device-info-card">
+        <div class="info-item">
+            <span class="info-label">Model</span>
+            <span id="infoModel" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Android OS</span>
+            <span id="infoAndroid" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Battery</span>
+            <span id="infoBattery" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">SELinux</span>
+            <span id="infoSelinux" class="info-val">-</span>
+        </div>
+    </div>
+
+    <label class="field-label">⚡ Preset Commands (Select to autofill):</label>
+    <select id="presetSelect">
+        <option value="" selected disabled>-- Select preset command --</option>
+        <optgroup label="🚀 Frameworks & Activation">
+            <option value="__AUTO_SHIZUKU__">🚀 Smart Locate & Start Shizuku</option>
+            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">🛡️ Activate Dhizuku (Device Owner)</option>
+            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">❄️ Activate Hail (Device Owner)</option>
+            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">🏠 Activate StopApp (Device Owner)</option>
+            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">🧊 Activate IceBox (Device Owner)</option>
+            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">⚡ Activate Brevent</option>
+            <option value="sh /data/system/thanos/start.sh">🌾 Activate Thanox</option>
+        </optgroup>
+        <optgroup label="📶 Wireless Debugging">
+            <option value="setprop service.adb.tcp.port 5555">📶 Enable TCP/IP on Port 5555</option>
+            <option value="setprop service.adb.tcp.port -1">❌ Disable TCP/IP</option>
+        </optgroup>
+        <optgroup label="🛠️ Diagnostics & Tweaks">
+            <option value="pm list packages -3">📦 List 3rd-party installed packages</option>
+            <option value="dumpsys battery">🔋 Dump battery health & status</option>
+            <option value="wm size">📐 Display screen resolution</option>
+        </optgroup>
+        <optgroup label="🔄 Reboot Options">
+            <option value="reboot">🔄 Reboot System</option>
+            <option value="reboot recovery">🛠️ Reboot to Recovery</option>
+            <option value="reboot bootloader">⚡ Reboot to Fastboot / Bootloader</option>
+        </optgroup>
+    </select>
+
+    <label class="field-label">⌨️ Custom ADB Command (Press Enter to run):</label>
+    <div class="cmd-row">
+        <input type="text" id="cmdInput" class="cmd-input" placeholder="Type command (adb shell prefix is auto-trimmed)" />
+        <button id="execBtn" class="btn-exec">Run</button>
+    </div>
+
+    <div class="term-header">
+        <span>Terminal Logs</span>
+        <span style="cursor:pointer;" id="clearBtn">[Clear]</span>
+    </div>
+    <div id="logs"></div>
+</div>
+
+<dialog id="disclaimerModal">
+    <h3>⚠️ Disclaimer & Safety</h3>
+    <p>Please review before proceeding:</p>
+    <ul>
+        <li><strong>Privacy:</strong> Runs 100% locally in your browser. No telemetry, logs, or personal data are collected or transferred.</li>
+        <li><strong>Risk Waiver:</strong> ADB grants low-level device control. Execute commands at your own risk. The developer is not liable for system malfunctions or data loss.</li>
+    </ul>
+    <div class="dialog-actions">
+        <button id="disagreeBtn" class="btn-disagree">Cancel</button>
+        <button id="agreeBtn" class="btn-agree">I Understand & Agree</button>
+    </div>
+</dialog>
+
+<script type="module">
+    import { AdbDaemonWebUsbDeviceManager } from "https://esm.sh/@yume-chan/adb-daemon-webusb@2.1.0";
+    import AdbWebCredentialStore from "https://esm.sh/@yume-chan/adb-credential-web@2.1.0";
+    import { Adb, AdbDaemonTransport } from "https://esm.sh/@yume-chan/adb@2.1.0";
+
+    const app = document.getElementById('app');
+    const statusText = document.getElementById('statusText');
+    const deviceInfoCard = document.getElementById('deviceInfoCard');
+    const infoModel = document.getElementById('infoModel');
+    const infoAndroid = document.getElementById('infoAndroid');
+    const infoBattery = document.getElementById('infoBattery');
+    const infoSelinux = document.getElementById('infoSelinux');
+
+    const connectBtn = document.getElementById('connectBtn');
+    const presetSelect = document.getElementById('presetSelect');
+    const cmdInput = document.getElementById('cmdInput');
+    const execBtn = document.getElementById('execBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const logs = document.getElementById('logs');
+
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const agreeBtn = document.getElementById('agreeBtn');
+    const disagreeBtn = document.getElementById('disagreeBtn');
+
+    let adb = null;
+    let device = null;
+    let isAgreed = localStorage.getItem('adb_disclaimer_agreed') === 'true';
+
+    function log(msg, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = `log-item log-${type}`;
+        div.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+        logs.appendChild(div);
+        logs.scrollTop = logs.scrollHeight;
+    }
+
+    clearBtn.onclick = () => { logs.innerHTML = ''; };
+
+    function ensureAgreed(callback) {
+        if (isAgreed) {
+            callback();
+        } else {
+            disclaimerModal.showModal();
+            agreeBtn.onclick = () => {
+                isAgreed = true;
+                localStorage.setItem('adb_disclaimer_agreed', 'true');
+                disclaimerModal.close();
+                callback();
+            };
+            disagreeBtn.onclick = () => {
+                disclaimerModal.close();
+                log('Authorization cancelled.', 'warn');
+            };
+        }
+    }
+
+    async function execute(command) {
+        if (!adb) {
+            log('Please connect a device first!', 'warn');
+            return null;
+        }
+
+        let cleanCmd = command.trim();
+        if (cleanCmd.startsWith('adb shell ')) {
+            cleanCmd = cleanCmd.replace(/^adb\s+shell\s+/, '');
+        } else if (cleanCmd.startsWith('adb ')) {
+            cleanCmd = cleanCmd.replace(/^adb\s+/, '');
+        }
+
+        try {
+            if (adb.subprocess.shellProtocol?.isSupported) {
+                const res = await adb.subprocess.shellProtocol.spawnWaitText(cleanCmd);
+                return res.stdout || res.stderr || '';
+            } else {
+                const process = await adb.subprocess.noneProtocol.spawn(cleanCmd);
+                const reader = process.stdout.getReader();
+                const decoder = new TextDecoder();
+                let output = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    output += decoder.decode(value, { stream: true });
+                }
+                return output;
+            }
+        } catch (err) {
+            log(`Execution error: ${err.message}`, 'err');
+            return null;
+        }
+    }
+
+    async function loadDeviceInfo() {
+        try {
+            const manufacturer = (await execute('getprop ro.product.manufacturer') || '').trim();
+            const model = (await execute('getprop ro.product.model') || '').trim();
+            const release = (await execute('getprop ro.build.version.release') || '').trim();
+            const sdk = (await execute('getprop ro.build.version.sdk') || '').trim();
+            const selinux = (await execute('getenforce') || '').trim();
+            const batteryDump = await execute('dumpsys battery') || '';
+            
+            let levelMatch = batteryDump.match(/level:\s*(\d+)/);
+            let batteryStr = levelMatch ? `${levelMatch[1]}%` : 'Normal';
+
+            infoModel.innerText = `${manufacturer} ${model}` || 'Unknown Device';
+            infoAndroid.innerText = `Android ${release} (API ${sdk})`;
+            infoBattery.innerText = batteryStr;
+            infoSelinux.innerText = selinux || 'Unknown';
+
+            deviceInfoCard.style.display = 'grid';
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function doConnect() {
+        if (!navigator.usb) {
+            log('WebUSB is not supported in this browser. Please use Chrome or Edge.', 'err');
+            return;
+        }
+        try {
+            log('Requesting USB device...', 'info');
+            device = await AdbDaemonWebUsbDeviceManager.BROWSER?.requestDevice();
+            if (!device) return log('Device selection cancelled', 'warn');
+
+            const connection = await device.connect();
+            const credentialStore = new AdbWebCredentialStore();
+            const transport = await AdbDaemonTransport.authenticate({
+                serial: device.serial,
+                connection: connection,
+                credentialStore: credentialStore,
+            });
+
+            adb = new Adb(transport);
+            const devName = (device.raw?.manufacturerName || 'Android') + ' ' + (device.raw?.productName || 'Device');
+            
+            app.classList.add('connected');
+            statusText.innerText = `Connected: ${devName}`;
+            log(`Connected to: ${devName}`, 'succ');
+            log(`If prompted on device, please tap "Allow USB debugging".`, 'warn');
+
+            await loadDeviceInfo();
+        } catch (err) {
+            log(`Connection failed: ${err.message}`, 'err');
+            adb = null;
+            app.classList.remove('connected');
+            statusText.innerText = 'Disconnected';
+            deviceInfoCard.style.display = 'none';
+        }
+    }
+
+    connectBtn.onclick = () => ensureAgreed(doConnect);
+
+    async function handleExec() {
+        const val = cmdInput.value.trim();
+        if (!val) {
+            log('Please enter or select a command.', 'warn');
+            return;
+        }
+
+        if (!adb) {
+            ensureAgreed(doConnect);
+            return;
+        }
+
+        if (val.includes('__AUTO_SHIZUKU__') || val === '🚀 Smart Locate & Start Shizuku') {
+            log('Searching Shizuku installation path...', 'info');
+            const pathRes = await execute('pm path moe.shizuku.privileged.api');
+            const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
+            
+            if (!match) {
+                log('Shizuku is not installed on device!', 'warn');
+                return;
+            }
+
+            const apkDir = match[1];
+            const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
+            if (!soPath) {
+                log('Could not locate libshizuku.so. Please update Shizuku.', 'warn');
+                return;
+            }
+
+            log(`Executing startup binary: ${soPath}`, 'info');
+            const out = await execute(soPath);
+            if (out && out.includes('shizuku_server pid is')) {
+                log(out.trim(), 'succ');
+                log('🎉 Shizuku started successfully!', 'succ');
+            } else {
+                log(`Output: ${out}`, 'info');
+            }
+            return;
+        }
+
+        log(`> ${val}`, 'cmd');
+        const res = await execute(val);
+        if (res !== null) {
+            if (res.trim()) {
+                log(res.trim(), 'succ');
+            } else {
+                log('(Command executed with no output)', 'info');
+            }
+        }
+    }
+
+    execBtn.onclick = handleExec;
+    cmdInput.onkeydown = (e) => { if (e.key === 'Enter') handleExec(); };
+
+    presetSelect.onchange = () => {
+        const val = presetSelect.value;
+        if (!val) return;
+        
+        if (val === '__AUTO_SHIZUKU__') {
+            cmdInput.value = '🚀 Smart Locate & Start Shizuku';
+        } else {
+            cmdInput.value = val;
+        }
+        cmdInput.focus();
+    };
+
+    log('Console ready. Tap [Connect Device] to begin.', 'info');
+</script>
+</body>
+</html>

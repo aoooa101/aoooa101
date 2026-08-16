@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WebADB 控制台</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card: #151e2e;
+            --card-sub: #1e293b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --accent: #2563eb;
+            --success: #10b981;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 0.75rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        h1 { font-size: 1.15rem; }
+        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: var(--card-sub);
+            color: var(--text-dim);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+        .connected .status-badge { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .connected .status-dot { background: var(--success); }
+
+        .device-info-card {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: var(--card-sub);
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+        .info-item { display: flex; flex-direction: column; }
+        .info-label { color: var(--text-dim); font-size: 0.65rem; }
+        .info-val { color: #38bdf8; font-weight: 600; font-family: ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .btn-connect {
+            width: 100%;
+            padding: 11px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+        }
+        .btn-connect:active { filter: brightness(0.9); }
+
+        .field-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
+        
+        select {
+            width: 100%;
+            padding: 10px;
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #38bdf8;
+            font-size: 0.85rem;
+            outline: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .cmd-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0.75rem;
+        }
+        .cmd-input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px;
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            font-family: ui-monospace, monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .cmd-input:focus { border-color: #38bdf8; }
+
+        .btn-exec {
+            padding: 0 16px;
+            background: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-exec:active { filter: brightness(0.9); }
+
+        .term-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        #logs {
+            background: #090d16;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: ui-monospace, monospace;
+            font-size: 0.72rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .log-item { margin-bottom: 3px; }
+        .log-time { color: #64748b; margin-right: 5px; }
+        .log-info { color: #94a3b8; }
+        .log-succ { color: #34d399; }
+        .log-warn { color: #fbbf24; }
+        .log-err { color: #f87171; }
+        .log-cmd { color: #38bdf8; font-weight: bold; }
+
+        dialog {
+            margin: auto;
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            max-width: 90%;
+            width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6);
+        }
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(2px);
+        }
+        dialog h3 { font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        dialog p { font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 0.6rem; }
+        dialog ul { font-size: 0.75rem; color: var(--text-dim); margin-left: 1.2rem; margin-bottom: 1rem; line-height: 1.5; }
+        .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .dialog-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-disagree { background: #334155; color: #cbd5e1; }
+        .btn-agree { background: var(--accent); color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <header>
+        <h1>
+            <span>📱 WebADB 控制台</span>
+            <a href="./en.html" class="lang-switch">[English]</a>
+        </h1>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span id="statusText">未连接</span>
+        </div>
+    </header>
+
+    <button id="connectBtn" class="btn-connect">🔌 1. 连接手机 (WebUSB)</button>
+
+    <div id="deviceInfoCard" class="device-info-card">
+        <div class="info-item">
+            <span class="info-label">设备型号</span>
+            <span id="infoModel" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">系统版本</span>
+            <span id="infoAndroid" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">电池状态</span>
+            <span id="infoBattery" class="info-val">-</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">SELinux 状态</span>
+            <span id="infoSelinux" class="info-val">-</span>
+        </div>
+    </div>
+
+    <label class="field-label">⚡ 常用命令预设 (选择自动填入)：</label>
+    <select id="presetSelect">
+        <option value="" selected disabled>-- 点击选择常用命令预设 --</option>
+        <optgroup label="🚀 框架与应用激活">
+            <option value="__AUTO_SHIZUKU__">🚀 智能寻找并启动 Shizuku</option>
+            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">🛡️ 激活 Dhizuku (Device Owner)</option>
+            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">❄️ 激活 雹 Hail (Device Owner)</option>
+            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">🏠 激活 小黑屋 (Device Owner)</option>
+            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">🧊 激活 冰箱 IceBox (Device Owner)</option>
+            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">⚡ 激活 黑阈 Brevent</option>
+            <option value="sh /data/system/thanos/start.sh">🌾 激活 Thanox 淘米</option>
+        </optgroup>
+        <optgroup label="📶 调试与网络">
+            <option value="setprop service.adb.tcp.port 5555">📶 开启 5555 端口无线调试</option>
+            <option value="setprop service.adb.tcp.port -1">❌ 关闭无线调试端口</option>
+        </optgroup>
+        <optgroup label="🛠️ 玩机与信息查看">
+            <option value="pm list packages -3">📦 查看所有第三方应用包名</option>
+            <option value="dumpsys battery">🔋 查看详细电池健康与温度</option>
+            <option value="wm size">📐 查看当前屏幕分辨率</option>
+        </optgroup>
+        <optgroup label="🔄 设备重启">
+            <option value="reboot">🔄 正常重启手机</option>
+            <option value="reboot recovery">🛠️ 重启至 Recovery 恢复模式</option>
+            <option value="reboot bootloader">⚡ 重启至 Fastboot 刷机模式</option>
+        </optgroup>
+    </select>
+
+    <label class="field-label">⌨️ 命令执行区 (支持回车执行)：</label>
+    <div class="cmd-row">
+        <input type="text" id="cmdInput" class="cmd-input" placeholder="输入或粘贴命令 (自动过滤 adb shell)" />
+        <button id="execBtn" class="btn-exec">执行</button>
+    </div>
+
+    <div class="term-header">
+        <span>终端输出日志</span>
+        <span style="cursor:pointer;" id="clearBtn">[清空]</span>
+    </div>
+    <div id="logs"></div>
+</div>
+
+<dialog id="disclaimerModal">
+    <h3>⚠️ 免责与安全声明</h3>
+    <p>在使用本控制台前，请仔细阅读以下声明：</p>
+    <ul>
+        <li><strong>隐私安全：</strong>本工具为 100% 纯前端浏览器本地执行，绝不上传、记录或中转您的任何设备信息或个人隐私。</li>
+        <li><strong>特权风险：</strong>ADB 具备系统高阶调试权限，请谨慎执行未知命令。因用户自行执行命令造成的任何系统异常或数据损失，本工具概不承担责任。</li>
+    </ul>
+    <div class="dialog-actions">
+        <button id="disagreeBtn" class="btn-disagree">不同意</button>
+        <button id="agreeBtn" class="btn-agree">我已知晓并同意</button>
+    </div>
+</dialog>
+
+<script type="module">
+    import { AdbDaemonWebUsbDeviceManager } from "https://esm.sh/@yume-chan/adb-daemon-webusb@2.1.0";
+    import AdbWebCredentialStore from "https://esm.sh/@yume-chan/adb-credential-web@2.1.0";
+    import { Adb, AdbDaemonTransport } from "https://esm.sh/@yume-chan/adb@2.1.0";
+
+    const app = document.getElementById('app');
+    const statusText = document.getElementById('statusText');
+    const deviceInfoCard = document.getElementById('deviceInfoCard');
+    const infoModel = document.getElementById('infoModel');
+    const infoAndroid = document.getElementById('infoAndroid');
+    const infoBattery = document.getElementById('infoBattery');
+    const infoSelinux = document.getElementById('infoSelinux');
+
+    const connectBtn = document.getElementById('connectBtn');
+    const presetSelect = document.getElementById('presetSelect');
+    const cmdInput = document.getElementById('cmdInput');
+    const execBtn = document.getElementById('execBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const logs = document.getElementById('logs');
+
+    const disclaimerModal = document.getElementById('disclaimerModal');
+    const agreeBtn = document.getElementById('agreeBtn');
+    const disagreeBtn = document.getElementById('disagreeBtn');
+
+    let adb = null;
+    let device = null;
+    let isAgreed = localStorage.getItem('adb_disclaimer_agreed') === 'true';
+
+    function log(msg, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const div = document.createElement('div');
+        div.className = `log-item log-${type}`;
+        div.innerHTML = `<span class="log-time">[${time}]</span><span>${msg}</span>`;
+        logs.appendChild(div);
+        logs.scrollTop = logs.scrollHeight;
+    }
+
+    clearBtn.onclick = () => { logs.innerHTML = ''; };
+
+    function ensureAgreed(callback) {
+        if (isAgreed) {
+            callback();
+        } else {
+            disclaimerModal.showModal();
+            agreeBtn.onclick = () => {
+                isAgreed = true;
+                localStorage.setItem('adb_disclaimer_agreed', 'true');
+                disclaimerModal.close();
+                callback();
+            };
+            disagreeBtn.onclick = () => {
+                disclaimerModal.close();
+                log('您已取消授权，无法连接设备。', 'warn');
+            };
+        }
+    }
+
+    async function execute(command) {
+        if (!adb) {
+            log('请先连接手机设备！', 'warn');
+            return null;
+        }
+
+        let cleanCmd = command.trim();
+        if (cleanCmd.startsWith('adb shell ')) {
+            cleanCmd = cleanCmd.replace(/^adb\s+shell\s+/, '');
+        } else if (cleanCmd.startsWith('adb ')) {
+            cleanCmd = cleanCmd.replace(/^adb\s+/, '');
+        }
+
+        try {
+            if (adb.subprocess.shellProtocol?.isSupported) {
+                const res = await adb.subprocess.shellProtocol.spawnWaitText(cleanCmd);
+                return res.stdout || res.stderr || '';
+            } else {
+                const process = await adb.subprocess.noneProtocol.spawn(cleanCmd);
+                const reader = process.stdout.getReader();
+                const decoder = new TextDecoder();
+                let output = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    output += decoder.decode(value, { stream: true });
+                }
+                return output;
+            }
+        } catch (err) {
+            log(`执行报错: ${err.message}`, 'err');
+            return null;
+        }
+    }
+
+    async function loadDeviceInfo() {
+        try {
+            const manufacturer = (await execute('getprop ro.product.manufacturer') || '').trim();
+            const model = (await execute('getprop ro.product.model') || '').trim();
+            const release = (await execute('getprop ro.build.version.release') || '').trim();
+            const sdk = (await execute('getprop ro.build.version.sdk') || '').trim();
+            const selinux = (await execute('getenforce') || '').trim();
+            const batteryDump = await execute('dumpsys battery') || '';
+            
+            let levelMatch = batteryDump.match(/level:\s*(\d+)/);
+            let batteryStr = levelMatch ? `${levelMatch[1]}%` : '正常';
+
+            infoModel.innerText = `${manufacturer} ${model}` || '未知设备';
+            infoAndroid.innerText = `Android ${release} (API ${sdk})`;
+            infoBattery.innerText = batteryStr;
+            infoSelinux.innerText = selinux || '未知';
+
+            deviceInfoCard.style.display = 'grid';
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function doConnect() {
+        if (!navigator.usb) {
+            log('当前浏览器不支持 WebUSB，请使用 Chrome 或 Edge 浏览器！', 'err');
+            return;
+        }
+        try {
+            log('正在等待选择 USB 设备...', 'info');
+            device = await AdbDaemonWebUsbDeviceManager.BROWSER?.requestDevice();
+            if (!device) return log('已取消设备选择', 'warn');
+
+            const connection = await device.connect();
+            const credentialStore = new AdbWebCredentialStore();
+            const transport = await AdbDaemonTransport.authenticate({
+                serial: device.serial,
+                connection: connection,
+                credentialStore: credentialStore,
+            });
+
+            adb = new Adb(transport);
+            const devName = (device.raw?.manufacturerName || 'Android') + ' ' + (device.raw?.productName || '设备');
+            
+            app.classList.add('connected');
+            statusText.innerText = `已连接: ${devName}`;
+            log(`连接成功: ${devName}`, 'succ');
+            log(`若手机提示“允许 USB 调试”，请在手机上点击“确定”。`, 'warn');
+
+            await loadDeviceInfo();
+        } catch (err) {
+            log(`连接失败: ${err.message}`, 'err');
+            adb = null;
+            app.classList.remove('connected');
+            statusText.innerText = '未连接';
+            deviceInfoCard.style.display = 'none';
+        }
+    }
+
+    connectBtn.onclick = () => ensureAgreed(doConnect);
+
+    async function handleExec() {
+        const val = cmdInput.value.trim();
+        if (!val) {
+            log('请输入或从上方选择要执行的命令！', 'warn');
+            return;
+        }
+
+        if (!adb) {
+            ensureAgreed(doConnect);
+            return;
+        }
+
+        if (val.includes('__AUTO_SHIZUKU__') || val === '🚀 智能寻找并启动 Shizuku') {
+            log('正在自动查找 Shizuku 启动路径...', 'info');
+            const pathRes = await execute('pm path moe.shizuku.privileged.api');
+            const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
+            
+            if (!match) {
+                log('未检测到已安装的 Shizuku App！', 'warn');
+                return;
+            }
+
+            const apkDir = match[1];
+            const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
+            if (!soPath) {
+                log('未能定位 libshizuku.so，建议更新 Shizuku 版本。', 'warn');
+                return;
+            }
+
+            log(`找到启动文件: ${soPath}，正在启动...`, 'info');
+            const out = await execute(soPath);
+            if (out && out.includes('shizuku_server pid is')) {
+                log(out.trim(), 'succ');
+                log('🎉 Shizuku 启动成功！', 'succ');
+            } else {
+                log(`执行返回: ${out}`, 'info');
+            }
+            return;
+        }
+
+        log(`> ${val}`, 'cmd');
+        const res = await execute(val);
+        if (res !== null) {
+            if (res.trim()) {
+                log(res.trim(), 'succ');
+            } else {
+                log('(命令已执行完毕，无返回文本)', 'info');
+            }
+        }
+    }
+
+    execBtn.onclick = handleExec;
+    cmdInput.onkeydown = (e) => { if (e.key === 'Enter') handleExec(); };
+
+    presetSelect.onchange = () => {
+        const val = presetSelect.value;
+        if (!val) return;
+        
+        if (val === '__AUTO_SHIZUKU__') {
+            cmdInput.value = '🚀 智能寻找并启动 Shizuku';
+        } else {
+            cmdInput.value = val;
+        }
+        cmdInput.focus();
+    };
+
+    log('控制台已就绪，请先点击【连接手机】。', 'info');
+</script>
+</body>
+</html>
