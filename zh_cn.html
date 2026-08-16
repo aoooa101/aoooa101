@@ -33,8 +33,8 @@
             border: 1px solid var(--border);
         }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        h1 { font-size: 1.15rem; }
-        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; }
+        h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; font-weight: normal; }
         .status-badge {
             font-size: 0.75rem;
             padding: 3px 8px;
@@ -75,8 +75,9 @@
             font-size: 0.9rem;
             cursor: pointer;
             margin-bottom: 0.75rem;
+            transition: opacity 0.15s;
         }
-        .btn-connect:active { filter: brightness(0.9); }
+        .btn-connect:active { opacity: 0.85; }
 
         .field-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
         
@@ -122,8 +123,9 @@
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
+            transition: opacity 0.15s;
         }
-        .btn-exec:active { filter: brightness(0.9); }
+        .btn-exec:active { opacity: 0.85; }
 
         .term-header {
             display: flex;
@@ -152,7 +154,7 @@
         .log-succ { color: #34d399; }
         .log-warn { color: #fbbf24; }
         .log-err { color: #f87171; }
-        .log-cmd { color: #38bdf8; font-weight: bold; }
+        .log-cmd { color: #38bdf8; font-weight: 600; }
 
         dialog {
             margin: auto;
@@ -169,7 +171,7 @@
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(2px);
         }
-        dialog h3 { font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        dialog h3 { font-size: 1.05rem; margin-bottom: 0.75rem; font-weight: 600; }
         dialog p { font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 0.6rem; }
         dialog ul { font-size: 0.75rem; color: var(--text-dim); margin-left: 1.2rem; margin-bottom: 1rem; line-height: 1.5; }
         .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -190,7 +192,7 @@
 <div class="container" id="app">
     <header>
         <h1>
-            <span>📱 WebADB 控制台</span>
+            <span>WebADB 控制台</span>
             <a href="./en.html" class="lang-switch">[English]</a>
         </h1>
         <div class="status-badge">
@@ -199,7 +201,7 @@
         </div>
     </header>
 
-    <button id="connectBtn" class="btn-connect">🔌 1. 连接手机 (WebUSB)</button>
+    <button id="connectBtn" class="btn-connect">连接设备 (WebUSB)</button>
 
     <div id="deviceInfoCard" class="device-info-card">
         <div class="info-item">
@@ -220,57 +222,57 @@
         </div>
     </div>
 
-    <label class="field-label">⚡ 常用命令预设 (选择自动填入)：</label>
+    <label class="field-label">常用命令预设 (选择自动填入)：</label>
     <select id="presetSelect">
-        <option value="" selected disabled>-- 点击选择常用命令预设 --</option>
-        <optgroup label="🚀 框架与应用激活">
-            <option value="__AUTO_SHIZUKU__">🚀 智能寻找并启动 Shizuku</option>
-            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">🛡️ 激活 Dhizuku (Device Owner)</option>
-            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">❄️ 激活 雹 Hail (Device Owner)</option>
-            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">🏠 激活 小黑屋 (Device Owner)</option>
-            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">🧊 激活 冰箱 IceBox (Device Owner)</option>
-            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">⚡ 激活 黑阈 Brevent</option>
-            <option value="sh /data/system/thanos/start.sh">🌾 激活 Thanox 淘米</option>
+        <option value="" selected disabled>-- 点击选择命令预设 --</option>
+        <optgroup label="框架与特权激活">
+            <option value="action:shizuku">自动寻找并启动 Shizuku</option>
+            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">激活 Dhizuku (Device Owner)</option>
+            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">激活 雹 Hail (Device Owner)</option>
+            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">激活 小黑屋 (Device Owner)</option>
+            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">激活 冰箱 IceBox (Device Owner)</option>
+            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">激活 黑阈 Brevent</option>
+            <option value="sh /data/system/thanos/start.sh">激活 Thanox 淘米</option>
         </optgroup>
-        <optgroup label="📶 调试与网络">
-            <option value="setprop service.adb.tcp.port 5555">📶 开启 5555 端口无线调试</option>
-            <option value="setprop service.adb.tcp.port -1">❌ 关闭无线调试端口</option>
+        <optgroup label="网络与调试">
+            <option value="setprop service.adb.tcp.port 5555">开启 5555 端口无线调试</option>
+            <option value="setprop service.adb.tcp.port -1">关闭无线调试端口</option>
         </optgroup>
-        <optgroup label="🛠️ 玩机与信息查看">
-            <option value="pm list packages -3">📦 查看所有第三方应用包名</option>
-            <option value="dumpsys battery">🔋 查看详细电池健康与温度</option>
-            <option value="wm size">📐 查看当前屏幕分辨率</option>
+        <optgroup label="系统与诊断">
+            <option value="pm list packages -3">查看第三方应用包名</option>
+            <option value="dumpsys battery">查看电池健康与温度</option>
+            <option value="wm size">查看屏幕物理分辨率</option>
         </optgroup>
-        <optgroup label="🔄 设备重启">
-            <option value="reboot">🔄 正常重启手机</option>
-            <option value="reboot recovery">🛠️ 重启至 Recovery 恢复模式</option>
-            <option value="reboot bootloader">⚡ 重启至 Fastboot 刷机模式</option>
+        <optgroup label="电源管理">
+            <option value="reboot">重启设备</option>
+            <option value="reboot recovery">重启至 Recovery 模式</option>
+            <option value="reboot bootloader">重启至 Bootloader / Fastboot</option>
         </optgroup>
     </select>
 
-    <label class="field-label">⌨️ 命令执行区 (支持回车执行)：</label>
+    <label class="field-label">命令控制台 (支持回车执行)：</label>
     <div class="cmd-row">
-        <input type="text" id="cmdInput" class="cmd-input" placeholder="输入或粘贴命令 (自动过滤 adb shell)" />
+        <input type="text" id="cmdInput" class="cmd-input" placeholder="输入或粘贴 ADB 命令 (自动过滤 adb shell)" />
         <button id="execBtn" class="btn-exec">执行</button>
     </div>
 
     <div class="term-header">
-        <span>终端输出日志</span>
+        <span>终端执行日志</span>
         <span style="cursor:pointer;" id="clearBtn">[清空]</span>
     </div>
     <div id="logs"></div>
 </div>
 
 <dialog id="disclaimerModal">
-    <h3>⚠️ 免责与安全声明</h3>
+    <h3>免责与安全声明</h3>
     <p>在使用本控制台前，请仔细阅读以下声明：</p>
     <ul>
-        <li><strong>隐私安全：</strong>本工具为 100% 纯前端浏览器本地执行，绝不上传、记录或中转您的任何设备信息或个人隐私。</li>
-        <li><strong>特权风险：</strong>ADB 具备系统高阶调试权限，请谨慎执行未知命令。因用户自行执行命令造成的任何系统异常或数据损失，本工具概不承担责任。</li>
+        <li><strong>本地执行：</strong>本工具为 100% 纯前端浏览器本地运行，绝不上报或中转您的任何设备数据与个人隐私。</li>
+        <li><strong>特权风险：</strong>ADB 具备系统高阶调试权限，请谨慎执行自定义命令。因用户自行执行命令造成的任何异常，开发者概不负责。</li>
     </ul>
     <div class="dialog-actions">
-        <button id="disagreeBtn" class="btn-disagree">不同意</button>
-        <button id="agreeBtn" class="btn-agree">我已知晓并同意</button>
+        <button id="disagreeBtn" class="btn-disagree">取消</button>
+        <button id="agreeBtn" class="btn-agree">已知晓并同意</button>
     </div>
 </dialog>
 
@@ -302,6 +304,7 @@
     let device = null;
     let isAgreed = localStorage.getItem('adb_disclaimer_agreed') === 'true';
 
+    // 安全日志输出：彻底防范 DOM XSS
     function log(msg, type = 'info') {
         const time = new Date().toLocaleTimeString();
         const div = document.createElement('div');
@@ -335,14 +338,15 @@
             };
             disagreeBtn.onclick = () => {
                 disclaimerModal.close();
-                log('您已取消授权，无法连接设备。', 'warn');
+                log('已取消连接授权。', 'warn');
             };
         }
     }
 
+    // ADB 基础执行器
     async function execute(command) {
         if (!adb) {
-            log('请先连接手机设备！', 'warn');
+            log('请先连接设备！', 'warn');
             return null;
         }
 
@@ -370,11 +374,40 @@
                 return output;
             }
         } catch (err) {
-            log(`执行报错: ${err.message}`, 'err');
+            log(`执行异常: ${err.message}`, 'err');
             return null;
         }
     }
 
+    // 智能定位并启动 Shizuku
+    async function runShizukuSmart() {
+        log('正在自动检索 Shizuku 安装路径...', 'info');
+        const pathRes = await execute('pm path moe.shizuku.privileged.api');
+        const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
+        
+        if (!match) {
+            log('未检测到安装的 Shizuku，请先在手机上安装该应用。', 'warn');
+            return;
+        }
+
+        const apkDir = match[1];
+        const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
+        if (!soPath) {
+            log('未能定位 libshizuku.so，建议更新 Shizuku 版本。', 'warn');
+            return;
+        }
+
+        log(`执行启动脚本: ${soPath}`, 'info');
+        const out = await execute(soPath);
+        if (out && out.includes('shizuku_server pid is')) {
+            log(out.trim(), 'succ');
+            log('Shizuku 启动成功！', 'succ');
+        } else {
+            log(`执行输出: ${out}`, 'info');
+        }
+    }
+
+    // 自动抓取硬件看板信息
     async function loadDeviceInfo() {
         try {
             const manufacturer = (await execute('getprop ro.product.manufacturer') || '').trim();
@@ -398,15 +431,16 @@
         }
     }
 
+    // 连接设备底层
     async function doConnect() {
         if (!navigator.usb) {
             log('当前浏览器不支持 WebUSB，请使用 Chrome 或 Edge 浏览器！', 'err');
             return;
         }
         try {
-            log('正在等待选择 USB 设备...', 'info');
+            log('等待选择 USB 设备...', 'info');
             device = await AdbDaemonWebUsbDeviceManager.BROWSER?.requestDevice();
-            if (!device) return log('已取消设备选择', 'warn');
+            if (!device) return log('已取消设备选择。', 'warn');
 
             const connection = await device.connect();
             const credentialStore = new AdbWebCredentialStore();
@@ -421,8 +455,8 @@
             
             app.classList.add('connected');
             statusText.innerText = `已连接: ${devName}`;
-            log(`连接成功: ${devName}`, 'succ');
-            log(`若手机提示“允许 USB 调试”，请在手机上点击“确定”。`, 'warn');
+            log(`设备连接成功: ${devName}`, 'succ');
+            log(`若手机弹出“允许 USB 调试”，请在手机上点击“确定”。`, 'warn');
 
             await loadDeviceInfo();
         } catch (err) {
@@ -436,10 +470,11 @@
 
     connectBtn.onclick = () => ensureAgreed(doConnect);
 
+    // 执行按钮分发
     async function handleExec() {
         const val = cmdInput.value.trim();
         if (!val) {
-            log('请输入或从上方选择要执行的命令！', 'warn');
+            log('请输入或选择要执行的命令！', 'warn');
             return;
         }
 
@@ -448,31 +483,14 @@
             return;
         }
 
-        if (val.includes('__AUTO_SHIZUKU__') || val === '🚀 智能寻找并启动 Shizuku') {
-            log('正在自动查找 Shizuku 启动路径...', 'info');
-            const pathRes = await execute('pm path moe.shizuku.privileged.api');
-            const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
-            
-            if (!match) {
-                log('未检测到已安装的 Shizuku App！', 'warn');
-                return;
-            }
+        // 统一且鲁棒的 Shizuku 判定：支持别名/动作标识/显式命令
+        const isShizukuAction = cmdInput.dataset.action === 'shizuku' || 
+                                val === 'shizuku start' || 
+                                val.toLowerCase() === 'shizuku' ||
+                                val === 'action:shizuku';
 
-            const apkDir = match[1];
-            const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
-            if (!soPath) {
-                log('未能定位 libshizuku.so，建议更新 Shizuku 版本。', 'warn');
-                return;
-            }
-
-            log(`找到启动文件: ${soPath}，正在启动...`, 'info');
-            const out = await execute(soPath);
-            if (out && out.includes('shizuku_server pid is')) {
-                log(out.trim(), 'succ');
-                log('🎉 Shizuku 启动成功！', 'succ');
-            } else {
-                log(`执行返回: ${out}`, 'info');
-            }
+        if (isShizukuAction) {
+            await runShizukuSmart();
             return;
         }
 
@@ -482,7 +500,7 @@
             if (res.trim()) {
                 log(res.trim(), 'succ');
             } else {
-                log('(命令已执行完毕，无返回文本)', 'info');
+                log('(命令已执行完毕，无返回输出)', 'info');
             }
         }
     }
@@ -490,19 +508,41 @@
     execBtn.onclick = handleExec;
     cmdInput.onkeydown = (e) => { if (e.key === 'Enter') handleExec(); };
 
+    // 用户手动输入时清除 dataset 动作标记，避免误绑
+    cmdInput.oninput = () => {
+        delete cmdInput.dataset.action;
+    };
+
+    // 下拉框联动
     presetSelect.onchange = () => {
         const val = presetSelect.value;
         if (!val) return;
         
-        if (val === '__AUTO_SHIZUKU__') {
-            cmdInput.value = '🚀 智能寻找并启动 Shizuku';
+        if (val === 'action:shizuku') {
+            cmdInput.dataset.action = 'shizuku';
+            cmdInput.value = 'shizuku start';
         } else {
+            delete cmdInput.dataset.action;
             cmdInput.value = val;
         }
         cmdInput.focus();
     };
 
-    log('控制台已就绪，请先点击【连接手机】。', 'info');
+    // 监听 USB 拔出事件
+    if (navigator.usb) {
+        navigator.usb.addEventListener("disconnect", (e) => {
+            if (device && e.device === device.raw) {
+                adb = null;
+                device = null;
+                app.classList.remove('connected');
+                statusText.innerText = '未连接';
+                deviceInfoCard.style.display = 'none';
+                log('设备已断开连接。', 'warn');
+            }
+        });
+    }
+
+    log('控制台已就绪，请点击上方【连接设备】开始。', 'info');
 </script>
 </body>
 </html>

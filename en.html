@@ -33,8 +33,8 @@
             border: 1px solid var(--border);
         }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        h1 { font-size: 1.15rem; }
-        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; }
+        h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+        .lang-switch { font-size: 0.75rem; color: var(--accent); text-decoration: none; margin-left: 8px; font-weight: normal; }
         .status-badge {
             font-size: 0.75rem;
             padding: 3px 8px;
@@ -75,8 +75,9 @@
             font-size: 0.9rem;
             cursor: pointer;
             margin-bottom: 0.75rem;
+            transition: opacity 0.15s;
         }
-        .btn-connect:active { filter: brightness(0.9); }
+        .btn-connect:active { opacity: 0.85; }
 
         .field-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block; }
         
@@ -122,8 +123,9 @@
             cursor: pointer;
             white-space: nowrap;
             flex-shrink: 0;
+            transition: opacity 0.15s;
         }
-        .btn-exec:active { filter: brightness(0.9); }
+        .btn-exec:active { opacity: 0.85; }
 
         .term-header {
             display: flex;
@@ -152,7 +154,7 @@
         .log-succ { color: #34d399; }
         .log-warn { color: #fbbf24; }
         .log-err { color: #f87171; }
-        .log-cmd { color: #38bdf8; font-weight: bold; }
+        .log-cmd { color: #38bdf8; font-weight: 600; }
 
         dialog {
             margin: auto;
@@ -169,7 +171,7 @@
             background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(2px);
         }
-        dialog h3 { font-size: 1.1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        dialog h3 { font-size: 1.05rem; margin-bottom: 0.75rem; font-weight: 600; }
         dialog p { font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 0.6rem; }
         dialog ul { font-size: 0.75rem; color: var(--text-dim); margin-left: 1.2rem; margin-bottom: 1rem; line-height: 1.5; }
         .dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -190,7 +192,7 @@
 <div class="container" id="app">
     <header>
         <h1>
-            <span>📱 WebADB Console</span>
+            <span>WebADB Console</span>
             <a href="./zh_cn.html" class="lang-switch">[中文]</a>
         </h1>
         <div class="status-badge">
@@ -199,7 +201,7 @@
         </div>
     </header>
 
-    <button id="connectBtn" class="btn-connect">🔌 1. Connect Device (WebUSB)</button>
+    <button id="connectBtn" class="btn-connect">Connect Device (WebUSB)</button>
 
     <div id="deviceInfoCard" class="device-info-card">
         <div class="info-item">
@@ -220,35 +222,35 @@
         </div>
     </div>
 
-    <label class="field-label">⚡ Preset Commands (Select to autofill):</label>
+    <label class="field-label">Preset Commands (Select to autofill):</label>
     <select id="presetSelect">
         <option value="" selected disabled>-- Select preset command --</option>
-        <optgroup label="🚀 Frameworks & Activation">
-            <option value="__AUTO_SHIZUKU__">🚀 Smart Locate & Start Shizuku</option>
-            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">🛡️ Activate Dhizuku (Device Owner)</option>
-            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">❄️ Activate Hail (Device Owner)</option>
-            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">🏠 Activate StopApp (Device Owner)</option>
-            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">🧊 Activate IceBox (Device Owner)</option>
-            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">⚡ Activate Brevent</option>
-            <option value="sh /data/system/thanos/start.sh">🌾 Activate Thanox</option>
+        <optgroup label="Frameworks & Activation">
+            <option value="action:shizuku">Auto-detect & Start Shizuku</option>
+            <option value="dpm set-device-owner com.rosan.dhizuku/.server.DhizukuDAReceiver">Activate Dhizuku (Device Owner)</option>
+            <option value="dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver">Activate Hail (Device Owner)</option>
+            <option value="dpm set-device-owner web1n.stopapp/.receiver.AdminReceiver">Activate StopApp (Device Owner)</option>
+            <option value="dpm set-device-owner com.catchingnow.icebox/.receiver.DPMReceiver">Activate IceBox (Device Owner)</option>
+            <option value="sh /data/data/me.piebridge.brevent/brevent.sh">Activate Brevent</option>
+            <option value="sh /data/system/thanos/start.sh">Activate Thanox</option>
         </optgroup>
-        <optgroup label="📶 Wireless Debugging">
-            <option value="setprop service.adb.tcp.port 5555">📶 Enable TCP/IP on Port 5555</option>
-            <option value="setprop service.adb.tcp.port -1">❌ Disable TCP/IP</option>
+        <optgroup label="Network & Debugging">
+            <option value="setprop service.adb.tcp.port 5555">Enable TCP/IP on Port 5555</option>
+            <option value="setprop service.adb.tcp.port -1">Disable TCP/IP</option>
         </optgroup>
-        <optgroup label="🛠️ Diagnostics & Tweaks">
-            <option value="pm list packages -3">📦 List 3rd-party installed packages</option>
-            <option value="dumpsys battery">🔋 Dump battery health & status</option>
-            <option value="wm size">📐 Display screen resolution</option>
+        <optgroup label="System & Diagnostics">
+            <option value="pm list packages -3">List 3rd-party installed packages</option>
+            <option value="dumpsys battery">Dump battery health & status</option>
+            <option value="wm size">Display physical resolution</option>
         </optgroup>
-        <optgroup label="🔄 Reboot Options">
-            <option value="reboot">🔄 Reboot System</option>
-            <option value="reboot recovery">🛠️ Reboot to Recovery</option>
-            <option value="reboot bootloader">⚡ Reboot to Fastboot / Bootloader</option>
+        <optgroup label="Power Management">
+            <option value="reboot">Reboot Device</option>
+            <option value="reboot recovery">Reboot to Recovery</option>
+            <option value="reboot bootloader">Reboot to Bootloader / Fastboot</option>
         </optgroup>
     </select>
 
-    <label class="field-label">⌨️ Custom ADB Command (Press Enter to run):</label>
+    <label class="field-label">Console Command (Press Enter to run):</label>
     <div class="cmd-row">
         <input type="text" id="cmdInput" class="cmd-input" placeholder="Type command (adb shell prefix is auto-trimmed)" />
         <button id="execBtn" class="btn-exec">Run</button>
@@ -262,11 +264,11 @@
 </div>
 
 <dialog id="disclaimerModal">
-    <h3>⚠️ Disclaimer & Safety</h3>
+    <h3>Disclaimer & Safety</h3>
     <p>Please review before proceeding:</p>
     <ul>
-        <li><strong>Privacy:</strong> Runs 100% locally in your browser. No telemetry, logs, or personal data are collected or transferred.</li>
-        <li><strong>Risk Waiver:</strong> ADB grants low-level device control. Execute commands at your own risk. The developer is not liable for system malfunctions or data loss.</li>
+        <li><strong>Local Execution:</strong> Runs 100% locally in your browser. No telemetry or personal data are collected or transferred.</li>
+        <li><strong>Privilege Risk:</strong> ADB grants low-level device control. Execute commands at your own risk. The developer is not liable for system malfunctions.</li>
     </ul>
     <div class="dialog-actions">
         <button id="disagreeBtn" class="btn-disagree">Cancel</button>
@@ -302,6 +304,7 @@
     let device = null;
     let isAgreed = localStorage.getItem('adb_disclaimer_agreed') === 'true';
 
+    // Safe DOM-based log renderer
     function log(msg, type = 'info') {
         const time = new Date().toLocaleTimeString();
         const div = document.createElement('div');
@@ -335,11 +338,12 @@
             };
             disagreeBtn.onclick = () => {
                 disclaimerModal.close();
-                log('Authorization cancelled.', 'warn');
+                log('Device connection cancelled.', 'warn');
             };
         }
     }
 
+    // ADB execution engine
     async function execute(command) {
         if (!adb) {
             log('Please connect a device first!', 'warn');
@@ -375,6 +379,34 @@
         }
     }
 
+    // Shizuku locator & executor
+    async function runShizukuSmart() {
+        log('Locating Shizuku installation directory...', 'info');
+        const pathRes = await execute('pm path moe.shizuku.privileged.api');
+        const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
+        
+        if (!match) {
+            log('Shizuku package not found on device.', 'warn');
+            return;
+        }
+
+        const apkDir = match[1];
+        const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
+        if (!soPath) {
+            log('Could not locate libshizuku.so. Please update Shizuku.', 'warn');
+            return;
+        }
+
+        log(`Executing binary: ${soPath}`, 'info');
+        const out = await execute(soPath);
+        if (out && out.includes('shizuku_server pid is')) {
+            log(out.trim(), 'succ');
+            log('Shizuku started successfully!', 'succ');
+        } else {
+            log(`Output: ${out}`, 'info');
+        }
+    }
+
     async function loadDeviceInfo() {
         try {
             const manufacturer = (await execute('getprop ro.product.manufacturer') || '').trim();
@@ -406,7 +438,7 @@
         try {
             log('Requesting USB device...', 'info');
             device = await AdbDaemonWebUsbDeviceManager.BROWSER?.requestDevice();
-            if (!device) return log('Device selection cancelled', 'warn');
+            if (!device) return log('Device selection cancelled.', 'warn');
 
             const connection = await device.connect();
             const credentialStore = new AdbWebCredentialStore();
@@ -448,31 +480,13 @@
             return;
         }
 
-        if (val.includes('__AUTO_SHIZUKU__') || val === '🚀 Smart Locate & Start Shizuku') {
-            log('Searching Shizuku installation path...', 'info');
-            const pathRes = await execute('pm path moe.shizuku.privileged.api');
-            const match = pathRes && pathRes.match(/package:(.+)\/base\.apk/);
-            
-            if (!match) {
-                log('Shizuku is not installed on device!', 'warn');
-                return;
-            }
+        const isShizukuAction = cmdInput.dataset.action === 'shizuku' || 
+                                val === 'shizuku start' || 
+                                val.toLowerCase() === 'shizuku' ||
+                                val === 'action:shizuku';
 
-            const apkDir = match[1];
-            const soPath = (await execute(`find ${apkDir} -name "libshizuku.so" 2>/dev/null`) || '').trim();
-            if (!soPath) {
-                log('Could not locate libshizuku.so. Please update Shizuku.', 'warn');
-                return;
-            }
-
-            log(`Executing startup binary: ${soPath}`, 'info');
-            const out = await execute(soPath);
-            if (out && out.includes('shizuku_server pid is')) {
-                log(out.trim(), 'succ');
-                log('🎉 Shizuku started successfully!', 'succ');
-            } else {
-                log(`Output: ${out}`, 'info');
-            }
+        if (isShizukuAction) {
+            await runShizukuSmart();
             return;
         }
 
@@ -490,17 +504,36 @@
     execBtn.onclick = handleExec;
     cmdInput.onkeydown = (e) => { if (e.key === 'Enter') handleExec(); };
 
+    cmdInput.oninput = () => {
+        delete cmdInput.dataset.action;
+    };
+
     presetSelect.onchange = () => {
         const val = presetSelect.value;
         if (!val) return;
         
-        if (val === '__AUTO_SHIZUKU__') {
-            cmdInput.value = '🚀 Smart Locate & Start Shizuku';
+        if (val === 'action:shizuku') {
+            cmdInput.dataset.action = 'shizuku';
+            cmdInput.value = 'shizuku start';
         } else {
+            delete cmdInput.dataset.action;
             cmdInput.value = val;
         }
         cmdInput.focus();
     };
+
+    if (navigator.usb) {
+        navigator.usb.addEventListener("disconnect", (e) => {
+            if (device && e.device === device.raw) {
+                adb = null;
+                device = null;
+                app.classList.remove('connected');
+                statusText.innerText = 'Disconnected';
+                deviceInfoCard.style.display = 'none';
+                log('Device disconnected.', 'warn');
+            }
+        });
+    }
 
     log('Console ready. Tap [Connect Device] to begin.', 'info');
 </script>
