@@ -18,7 +18,7 @@
 
 ## 部署
 
-项目没有构建步骤，不需要安装 Node.js。直接将 `index.html`、`zh_cn.html`、`en.html` 放到任意静态服务器（如 GitHub Pages、Cloudflare Pages 或 Nginx）即可。
+项目没有构建步骤，不需要安装 Node.js。直接将 `index.html` 放到任意静态服务器（如 GitHub Pages、Cloudflare Pages 或 Nginx）即可（页面已内置中英文切换，无需额外文件）。
 
 > **注意**：WebUSB API 要求页面必须运行在 HTTPS 环境或 `http://localhost` 下。
 
