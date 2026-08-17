@@ -304,6 +304,12 @@
 </dialog>
 
 <script type="module">
+    // 2026-08-17 修复：
+    //   1. spawnWaitText 在 v2.1.0 返回文本流 (ReadableStream) 而非 {stdout,stderr} 对象，
+    //      原实现导致所有命令输出静默丢失，已改为逐块读取。
+    //   2. 补充 WebUSB 管理器不可用 (非 HTTPS / 浏览器不支持) 时的明确报错。
+    // 提示：若 esm.sh 加载失败 (页面点击无反应)，可将下方三个域名整体替换为
+    // https://cdn.jsdelivr.net/npm/@yume-chan/<包名>@2.1.0/+esm (导出格式已验证一致)。
     import { AdbDaemonWebUsbDeviceManager } from "https://esm.sh/@yume-chan/adb-daemon-webusb@2.1.0";
     import AdbWebCredentialStore from "https://esm.sh/@yume-chan/adb-credential-web@2.1.0";
     import { Adb, AdbDaemonTransport } from "https://esm.sh/@yume-chan/adb@2.1.0";
@@ -436,21 +442,21 @@
         }
 
         try {
-            if (adb.subprocess.shellProtocol?.isSupported) {
-                const res = await adb.subprocess.shellProtocol.spawnWaitText(cleanCmd);
-                return res.stdout || res.stderr || '';
-            } else {
-                const process = await adb.subprocess.noneProtocol.spawn(cleanCmd);
-                const reader = process.stdout.getReader();
-                const decoder = new TextDecoder();
-                let output = '';
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    output += decoder.decode(value, { stream: true });
-                }
-                return output;
+            // v2.1.0 的 spawnWaitText() 返回 ReadableStream<string> 文本流，
+            // 并非 {stdout, stderr} 对象，必须逐块读取。
+            const proto = adb.subprocess.shellProtocol?.isSupported
+                ? adb.subprocess.shellProtocol
+                : adb.subprocess.noneProtocol;
+
+            const stream = proto.spawnWaitText(cleanCmd);
+            const reader = stream.getReader();
+            let output = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                output += value; // value 已是解码后的字符串
             }
+            return output;
         } catch (err) {
             log(`${currentLang === 'zh' ? '执行异常: ' : 'Execution error: '}${err.message}`, 'err');
             return null;
@@ -545,12 +551,16 @@
     // WebUSB 连接
     async function doConnect() {
         if (!navigator.usb) {
-            log(currentLang === 'zh' ? '当前浏览器不支持 WebUSB，请使用 Chrome 或 Edge 浏览器！' : 'WebUSB is not supported in this browser. Please use Chrome or Edge.', 'err');
+            log(currentLang === 'zh' ? '当前浏览器不支持 WebUSB，请使用桌面 Chrome 或 Edge，并通过 HTTPS 或 localhost 访问本页面！' : 'WebUSB is not supported in this browser. Use desktop Chrome or Edge over HTTPS (or localhost).', 'err');
+            return;
+        }
+        if (!AdbDaemonWebUsbDeviceManager.BROWSER) {
+            log(currentLang === 'zh' ? 'WebUSB 管理器不可用，请确认当前为安全上下文 (HTTPS)。' : 'WebUSB manager unavailable. Ensure a secure context (HTTPS).', 'err');
             return;
         }
         try {
-            device = await AdbDaemonWebUsbDeviceManager.BROWSER?.requestDevice();
-            if (!device) return log(currentLang === 'zh' ? '已取消设备选择。' : 'Device selection cancelled.', 'warn');
+            device = await AdbDaemonWebUsbDeviceManager.BROWSER.requestDevice();
+            if (!device) return log(currentLang === 'zh' ? '未选择任何 ADB 设备（可能已取消，或未找到可用的调试设备）。' : 'No ADB device selected or found.', 'warn');
 
             const connection = await device.connect();
             const credentialStore = new AdbWebCredentialStore();
