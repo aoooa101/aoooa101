@@ -304,15 +304,14 @@
 </dialog>
 
 <script type="module">
-    // 2026-08-17 修复：
-    //   1. spawnWaitText 在 v2.1.0 返回文本流 (ReadableStream) 而非 {stdout,stderr} 对象，
-    //      原实现导致所有命令输出静默丢失，已改为逐块读取。
-    //   2. 补充 WebUSB 管理器不可用 (非 HTTPS / 浏览器不支持) 时的明确报错。
-    // 提示：若 esm.sh 加载失败 (页面点击无反应)，可将下方三个域名整体替换为
-    // https://cdn.jsdelivr.net/npm/@yume-chan/<包名>@2.1.0/+esm (导出格式已验证一致)。
-    import { AdbDaemonWebUsbDeviceManager } from "https://esm.sh/@yume-chan/adb-daemon-webusb@2.1.0";
+    // 2026-08-17 修复与升级：
+    //   1. 升级到最新版：adb@2.6.2 / adb-daemon-webusb@2.3.2 / adb-credential-web@2.1.0，
+    //      与 shizuku-starter 同版本线，修复 Android 9 等旧设备 ADB 认证超时问题。
+    //   2. 新版 spawnWaitText 返回 {stdout, stderr, exitCode} 对象（旧 2.1.0 返回流）。
+    //   3. 补充 WebUSB 管理器不可用 (非 HTTPS / 浏览器不支持) 时的明确报错。
+    import { AdbDaemonWebUsbDeviceManager } from "https://esm.sh/@yume-chan/adb-daemon-webusb@2.3.2";
     import AdbWebCredentialStore from "https://esm.sh/@yume-chan/adb-credential-web@2.1.0";
-    import { Adb, AdbDaemonTransport } from "https://esm.sh/@yume-chan/adb@2.1.0";
+    import { Adb, AdbDaemonTransport } from "https://esm.sh/@yume-chan/adb@2.6.2";
 
     // -------------------------------------------------------------
     // 现代声明式 DOM i18n 引擎 (极简零开销，告别笨重硬编码字典)
@@ -442,21 +441,13 @@
         }
 
         try {
-            // v2.1.0 的 spawnWaitText() 返回 ReadableStream<string> 文本流，
-            // 并非 {stdout, stderr} 对象，必须逐块读取。
+            // v2.6.x 的 spawnWaitText() 返回 { stdout, stderr, exitCode } 对象
             const proto = adb.subprocess.shellProtocol?.isSupported
                 ? adb.subprocess.shellProtocol
                 : adb.subprocess.noneProtocol;
 
-            const stream = proto.spawnWaitText(cleanCmd);
-            const reader = stream.getReader();
-            let output = '';
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                output += value; // value 已是解码后的字符串
-            }
-            return output;
+            const result = await proto.spawnWaitText(cleanCmd);
+            return result.stdout || result.stderr || '';
         } catch (err) {
             log(`${currentLang === 'zh' ? '执行异常: ' : 'Execution error: '}${err.message}`, 'err');
             return null;
