@@ -564,11 +564,19 @@
 
             const connection = await device.connect();
             const credentialStore = new AdbWebCredentialStore();
-            const transport = await AdbDaemonTransport.authenticate({
-                serial: device.serial,
-                connection: connection,
-                credentialStore: credentialStore,
-            });
+            // 加 15 秒超时，避免 authenticate 卡死（目标设备未响应 ADB 握手时）
+            const transport = await Promise.race([
+                AdbDaemonTransport.authenticate({
+                    serial: device.serial,
+                    connection: connection,
+                    credentialStore: credentialStore,
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error(
+                    currentLang === 'zh'
+                        ? 'ADB 认证超时（15秒），请确认目标设备已开启 USB 调试并允许授权。'
+                        : 'ADB authentication timed out (15s). Make sure USB debugging is enabled and authorized on the target device.'
+                )), 15000))
+            ]);
 
             adb = new Adb(transport);
             deviceName = (device.raw?.manufacturerName || 'Android') + ' ' + (device.raw?.productName || 'Device');
