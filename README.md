@@ -22,6 +22,13 @@
 
 > **注意**：WebUSB API 要求页面必须运行在 HTTPS 环境或 `http://localhost` 下。
 
+## 致谢
+
+本项目重度依赖以下开源项目，特此致谢：
+
+- [ya-webadb](https://github.com/yume-chan/ya-webadb)（@yume-chan/adb 系列）— 浏览器端 ADB 协议实现与 WebUSB 连接层，让"网页里跑 ADB"成为可能（MIT 协议）。
+- [esm.sh](https://esm.sh) — ESM 模块公共 CDN 分发服务，提供上述库的在线加载。
+
 ## 免责声明
 
 本工具仅供技术研究与个人日常玩机使用。ADB 具有系统底层权限，请在执行高风险命令前自行核对，因误操作导致的设备异常由操作者自行承担。
