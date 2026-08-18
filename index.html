@@ -522,7 +522,7 @@
             return;
         }
         try {
-            const svc = new AdbTcpIpService(adb.transport);
+            const svc = new AdbTcpIpService(adb);
             if (enable) {
                 log(currentLang === 'zh' ? '正在开启 5555 端口无线调试...' : 'Enabling wireless ADB on port 5555...', 'info');
                 const out = await svc.setPort(5555);
