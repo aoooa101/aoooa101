@@ -262,8 +262,8 @@
             <option value="sh /data/system/thanos/start.sh" data-en="Activate Thanox">激活 Thanox 淘米</option>
         </optgroup>
         <optgroup label="网络与调试" data-en-label="Network & Debugging">
-            <option value="setprop service.adb.tcp.port 5555" data-en="Enable TCP/IP on Port 5555">开启 5555 端口无线调试</option>
-            <option value="setprop service.adb.tcp.port -1" data-en="Disable TCP/IP">关闭无线调试端口</option>
+            <option value="action:tcpip_on" data-en="Enable Wireless ADB (Port 5555)">开启 5555 端口无线调试</option>
+            <option value="action:tcpip_off" data-en="Disable Wireless ADB">关闭无线调试端口</option>
         </optgroup>
         <optgroup label="系统与诊断" data-en-label="System & Diagnostics">
             <option value="pm list packages -3" data-en="List 3rd-party installed packages">查看第三方应用包名</option>
@@ -311,7 +311,7 @@
     //      现改用本地 vendor/adb-bundle.js（esbuild 打包单文件，保证单一实例）。
     //   2. 版本：adb@2.6.2 / adb-daemon-webusb@2.3.2 / adb-credential-web@2.1.0。
     //   3. 新版 spawnWaitText 返回 {stdout, stderr, exitCode} 对象。
-    import { Adb, AdbDaemonTransport, AdbDaemonWebUsbDeviceManager, AdbWebCredentialStore } from "./vendor/adb-bundle.js";
+    import { Adb, AdbDaemonTransport, AdbDaemonWebUsbDeviceManager, AdbTcpIpService, AdbWebCredentialStore } from "./vendor/adb-bundle.js";
 
     // -------------------------------------------------------------
     // 现代声明式 DOM i18n 引擎 (极简零开销，告别笨重硬编码字典)
@@ -515,6 +515,30 @@
         }
     }
 
+    // 开启/关闭 5555 无线调试端口（走 adb 协议 tcpip 服务命令，非 root 有效）
+    async function runTcpip(enable) {
+        if (!adb) {
+            log(currentLang === 'zh' ? '请先连接设备！' : 'Please connect a device first!', 'warn');
+            return;
+        }
+        try {
+            const svc = new AdbTcpIpService(adb.transport);
+            if (enable) {
+                log(currentLang === 'zh' ? '正在开启 5555 端口无线调试...' : 'Enabling wireless ADB on port 5555...', 'info');
+                const out = await svc.setPort(5555);
+                log(out.trim(), 'succ');
+                log(currentLang === 'zh' ? '已开启！adbd 正在重启，连接会短暂断开，稍后可重新连接。' : 'Enabled! adbd is restarting, connection will drop briefly.', 'info');
+            } else {
+                log(currentLang === 'zh' ? '正在关闭无线调试端口...' : 'Disabling wireless ADB...', 'info');
+                const out = await svc.disable();
+                log(out.trim(), 'succ');
+                log(currentLang === 'zh' ? '已关闭，回到 USB 模式。adbd 正在重启，连接会短暂断开。' : 'Disabled, back to USB mode. adbd is restarting.', 'info');
+            }
+        } catch (err) {
+            log(`${currentLang === 'zh' ? '操作失败: ' : 'Failed: '}${err.message}`, 'err');
+        }
+    }
+
     // 抓取硬件信息看板
     async function loadDeviceInfo() {
         try {
@@ -613,6 +637,16 @@
             return;
         }
 
+        // TCPIP 无线调试动作分发
+        if (cmdInput.dataset.action === 'tcpip_on' || val === '开启 5555 端口无线调试') {
+            await runTcpip(true);
+            return;
+        }
+        if (cmdInput.dataset.action === 'tcpip_off' || val === '关闭无线调试端口') {
+            await runTcpip(false);
+            return;
+        }
+
         log(`> ${val}`, 'cmd');
         const res = await execute(val);
         if (res !== null) {
@@ -640,6 +674,12 @@
         if (val === 'action:shizuku') {
             cmdInput.dataset.action = 'shizuku';
             cmdInput.value = 'shizuku start';
+        } else if (val === 'action:tcpip_on') {
+            cmdInput.dataset.action = 'tcpip_on';
+            cmdInput.value = currentLang === 'zh' ? '开启 5555 端口无线调试' : 'Enable wireless ADB (5555)';
+        } else if (val === 'action:tcpip_off') {
+            cmdInput.dataset.action = 'tcpip_off';
+            cmdInput.value = currentLang === 'zh' ? '关闭无线调试端口' : 'Disable wireless ADB';
         } else {
             delete cmdInput.dataset.action;
             cmdInput.value = val;
