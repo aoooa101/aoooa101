@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0006--1511--466X-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0006-1511-466X)
 
-👉 **在线使用**：[https://aoooa101.github.io/aoooa101/](https://aoooa101.github.io/aoooa101/)
+👉 **在线使用**：[https://aoooa101.github.io/aoooa-webadb/](https://aoooa101.github.io/aoooa-webadb/)
 
 基于 WebUSB 的免驱动浏览器端 ADB 工具。用数据线连接手机即可在网页里激活 Shizuku、Dhizuku 或直接运行 ADB 命令。
 
